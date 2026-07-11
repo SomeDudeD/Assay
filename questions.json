@@ -1,0 +1,98 @@
+{
+  "resolve_at": "2026-07-11T17:00:00-07:00",
+  "questions": [
+    {
+      "id": 1,
+      "kind": "above",
+      "ticker": "BTC-USD",
+      "spot": 64312.9609375,
+      "strike": 64570.2128,
+      "prompt": "Will BTC finish above $64,570.21 (spot +0.4%)?"
+    },
+    {
+      "id": 2,
+      "kind": "below",
+      "ticker": "BTC-USD",
+      "spot": 64312.9609375,
+      "strike": 64055.7091,
+      "prompt": "Will BTC finish below $64,055.71 (spot -0.4%)?"
+    },
+    {
+      "id": 3,
+      "kind": "above",
+      "ticker": "ETH-USD",
+      "spot": 1824.050048828125,
+      "strike": 1833.1703,
+      "prompt": "Will ETH finish above $1,833.17 (spot +0.5%)?"
+    },
+    {
+      "id": 4,
+      "kind": "above",
+      "ticker": "SOL-USD",
+      "spot": 78.19000244140625,
+      "strike": 78.7373,
+      "prompt": "Will SOL finish above $78.74 (spot +0.7%)?"
+    },
+    {
+      "id": 5,
+      "kind": "above",
+      "ticker": "XRP-USD",
+      "spot": 1.113700032234192,
+      "strike": 1.1204,
+      "prompt": "Will XRP finish above $1.1204 (spot +0.6%)?"
+    },
+    {
+      "id": 6,
+      "kind": "pct_gt",
+      "a": "ETH-USD",
+      "b": "BTC-USD",
+      "spot": {
+        "ETH-USD": 1824.050048828125,
+        "BTC-USD": 64312.9609375
+      },
+      "prompt": "Will ETH's % change beat BTC's % change?"
+    },
+    {
+      "id": 7,
+      "kind": "pct_gt",
+      "a": "SOL-USD",
+      "b": "ETH-USD",
+      "spot": {
+        "SOL-USD": 78.19000244140625,
+        "ETH-USD": 1824.050048828125
+      },
+      "prompt": "Will SOL's % change beat ETH's % change?"
+    },
+    {
+      "id": 8,
+      "kind": "any_move",
+      "threshold": 0.015,
+      "spot": {
+        "BTC-USD": 64312.9609375,
+        "ETH-USD": 1824.050048828125,
+        "SOL-USD": 78.19000244140625,
+        "XRP-USD": 1.113700032234192
+      },
+      "prompt": "Will any of the four (BTC/ETH/SOL/XRP) move more than 1.5% either direction?"
+    },
+    {
+      "id": 9,
+      "kind": "within",
+      "ticker": "BTC-USD",
+      "spot": 64312.9609375,
+      "band": 0.0025,
+      "prompt": "Will BTC finish within \u00b10.25% of $64,312.96?"
+    },
+    {
+      "id": 10,
+      "kind": "all_same_dir",
+      "spot": {
+        "BTC-USD": 64312.9609375,
+        "ETH-USD": 1824.050048828125,
+        "SOL-USD": 78.19000244140625,
+        "XRP-USD": 1.113700032234192
+      },
+      "prompt": "Will all four (BTC/ETH/SOL/XRP) move the same direction?"
+    }
+  ]
+}
