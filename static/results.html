@@ -13,6 +13,10 @@
   h2 { font-size:16px; text-transform:uppercase; letter-spacing:.06em; color:#8b949e;
        margin:32px 0 14px; }
   .duel { display:flex; gap:16px; }
+  .duel.trio { gap:10px; }
+  .duel.trio .num { font-size:34px; }
+  .duel.trio .side { padding:18px 8px; }
+  @media (max-width:520px){ .duel.trio .num { font-size:26px; } .duel.trio .lbl { font-size:11px; } }
   .side { flex:1; background:#161b22; border:1px solid #21262d; border-radius:16px;
           padding:24px 16px; text-align:center; transition:.2s; }
   .side.win { border-color:#238636; background:#12271a; box-shadow:0 0 0 2px #23863644; }
@@ -34,54 +38,58 @@
 </head>
 <body>
   <h1>Assay — Crowd Results</h1>
-  <div class="sub">Naive crowd vs. calibration-weighted crowd. Lower Brier is better.</div>
+  <div class="sub">Naive vs. absolute-weighted vs. relative-weighted (softmax) crowd. Lower Brier is better.</div>
   <div id="content">Loading…</div>
   <div class="foot"><a href="/leaderboard">→ Leaderboard</a> &nbsp;·&nbsp; <a href="/">→ Capture app</a></div>
 
 <script>
+let SOFTMAX_T = 0.05;
 function fmt(x){ return x==null ? '—' : x.toFixed(4); }
 
-function duel(title, block, note){
+function trio(title, block, note){
   if(!block || block.n===0){
     return `<h2>${title}</h2><div class="pending">Not resolved yet — ${note}</div>`;
   }
-  const nb=block.naive_brier, wb=block.weighted_brier;
-  const wWin = wb < nb, nWin = nb < wb;
-  const lift = (nb && wb!=null) ? ((nb-wb)/nb*100) : null;
-  let liftLine = '';
-  if(lift!=null){
-    liftLine = lift>=0
-      ? `Weighting cut crowd error by <b>${lift.toFixed(1)}%</b>`
-      : `Weighting was worse by ${(-lift).toFixed(1)}%`;
-  }
+  const schemes = [
+    {key:'naive_brier',    lbl:'Naive crowd',       tag:'mean of all forecasts'},
+    {key:'absolute_brier', lbl:'Absolute-weighted',  tag:'weight = max(0, skill)'},
+    {key:'relative_brier', lbl:'Relative-weighted',  tag:`softmax, T=${SOFTMAX_T}`},
+  ];
+  // winner = lowest brier among the non-null schemes
+  let best=null;
+  schemes.forEach(s=>{ const v=block[s.key]; if(v!=null && (best==null || v<block[best])) best=s.key; });
+
+  const degenNote = block.absolute_degenerate
+    ? `<div class="lift">⚠︎ Absolute weights are all zero (nobody beat the 0.5 baseline) — it collapses to the naive mean.</div>`
+    : '';
+
+  let cards = schemes.map(s=>{
+    const v=block[s.key]; const win = s.key===best;
+    const tag = win ? 'WINNER' : s.tag;
+    return `<div class="side ${win?'win':''}">
+        <div class="lbl">${s.lbl}</div>
+        <div class="num">${fmt(v)}</div>
+        <div class="tag">${tag}</div>
+      </div>`;
+  }).join('');
+
   return `<h2>${title} <span style="color:#8b949e;font-weight:400">· ${block.n} questions</span></h2>
-    <div class="duel">
-      <div class="side ${nWin?'win':''}">
-        <div class="lbl">Naive crowd</div>
-        <div class="num">${fmt(nb)}</div>
-        <div class="tag">${nWin?'WINNER':'mean of all forecasts'}</div>
-      </div>
-      <div class="side ${wWin?'win':''}">
-        <div class="lbl">Weighted crowd</div>
-        <div class="num">${fmt(wb)}</div>
-        <div class="tag">${wWin?'WINNER':'calibration-weighted'}</div>
-      </div>
-    </div>
-    <div class="lift">${liftLine}</div>`;
+    <div class="duel trio">${cards}</div>${degenNote}`;
 }
 
 function detailTable(block){
   if(!block || !block.detail || !block.detail.length) return '';
   let rows = block.detail.map(d=>`<tr><td>Q${d.question_id}</td><td>${d.outcome}</td>
-     <td>${d.naive.toFixed(3)}</td><td>${d.weighted.toFixed(3)}</td></tr>`).join('');
-  return `<table><tr><th>Question</th><th>Outcome</th><th>Naive</th><th>Weighted</th></tr>${rows}</table>`;
+     <td>${d.naive.toFixed(3)}</td><td>${d.absolute.toFixed(3)}</td><td>${d.relative.toFixed(3)}</td></tr>`).join('');
+  return `<table><tr><th>Question</th><th>Outcome</th><th>Naive</th><th>Absolute</th><th>Relative</th></tr>${rows}</table>`;
 }
 
 async function load(){
   const d = await (await fetch('/results_data')).json();
-  let html = duel('Live questions', d.live, 'run the resolver at 5:00pm PT (resolve_live.py)');
+  if(d.softmax_T!=null) SOFTMAX_T = d.softmax_T;
+  let html = trio('Live questions', d.live, 'run the resolver at 5:00pm PT (resolve_live.py)');
   html += detailTable(d.live);
-  html += duel('Holdout mode (fallback)', d.holdout,
+  html += trio('Holdout mode (fallback)', d.holdout,
                'needs forecasts — train on charts 1-5, score on 6-10');
   html += detailTable(d.holdout);
   html += `<div class="foot" style="color:#8b949e">${d.n_forecasters} forecaster(s) in pool.</div>`;

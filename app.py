@@ -136,20 +136,30 @@ def reputation(handle: str):
 def aggregate(question_id: int, type: str = "live"):
     conn = db()
     try:
-        return scoring.aggregate(conn, type, question_id)
+        w_abs = scoring.weights_map(conn)
+        w_rel = scoring.weights_softmax(conn)
+        a_abs = scoring.aggregate(conn, type, question_id, w_abs)
+        a_rel = scoring.aggregate(conn, type, question_id, w_rel)
+        return {
+            "naive": a_abs["naive"],
+            "weighted_absolute": a_abs["weighted"],
+            "weighted_relative": a_rel["weighted"],
+            "n": a_abs["n"],
+            "outcome": a_abs.get("outcome"),
+        }
     finally:
         conn.close()
 
 
 @app.get("/results_data")
 def results_data():
-    """naive vs weighted crowd brier for resolved live questions + holdout fallback."""
+    """naive vs absolute-weighted vs relative-weighted crowd brier: live questions + holdout."""
     conn = db()
     try:
-        weights = scoring.weights_map(conn)
-        live = scoring.crowd_briers(conn, "live", list(range(1, 11)), weights)
+        live = scoring.results_multi(conn, "live", list(range(1, 11)))
         hold = scoring.holdout(conn)
         return {"live": live, "holdout": hold,
+                "softmax_T": scoring.SOFTMAX_T,
                 "n_forecasters": len(scoring.all_handles(conn))}
     finally:
         conn.close()

@@ -1,7 +1,9 @@
 """Shared scoring / reputation / aggregation logic (Stages 3-4). Pure reads on assay.db."""
+import math
 import sqlite3
 
 DB = "assay.db"
+SOFTMAX_T = 0.05  # temperature for the relative/softmax weighting scheme
 
 
 def db():
@@ -99,8 +101,64 @@ def calibration_curve(pairs):
 
 
 def weights_map(conn, ids=None):
-    """{handle: weight} using chart skill (optionally trained on subset `ids`)."""
+    """Absolute scheme. {handle: weight} = max(0, skill) on chart questions (subset `ids`).
+
+    Degenerate (all-zero) when no forecaster beats the 0.5 baseline.
+    """
     return {h: reputation(conn, h, ids=ids)["weight"] for h in all_handles(conn)}
+
+
+def weights_softmax(conn, ids=None, T=SOFTMAX_T):
+    """Relative scheme. weight_i = exp(-brier_i / T), normalized to sum to 1.
+
+    Always well-defined: every forecaster with any scored chart question gets positive
+    weight, sharply concentrated on the lowest-brier forecasters. Never degenerate.
+    """
+    briers = {}
+    for h in all_handles(conn):
+        rep = reputation(conn, h, ids=ids)
+        if rep["brier"] is not None:
+            briers[h] = rep["brier"]
+    raw = {h: math.exp(-b / T) for h, b in briers.items()}
+    s = sum(raw.values())
+    if s <= 0:
+        return {h: 0.0 for h in raw}
+    return {h: v / s for h, v in raw.items()}
+
+
+def results_multi(conn, qtype, qids, ids_for_weights=None):
+    """naive + absolute-weighted + relative-weighted crowd Brier across resolved `qids`.
+
+    Weights are trained on the chart questions in `ids_for_weights` (None = all 10).
+    """
+    w_abs = weights_map(conn, ids=ids_for_weights)
+    w_rel = weights_softmax(conn, ids=ids_for_weights)
+    truth = live_outcomes(conn) if qtype == "live" else chart_truth(conn)
+
+    naive_pairs, abs_pairs, rel_pairs, detail = [], [], [], []
+    for qid in qids:
+        if qid not in truth:
+            continue
+        a_abs = aggregate(conn, qtype, qid, w_abs)
+        if a_abs["naive"] is None:
+            continue
+        a_rel = aggregate(conn, qtype, qid, w_rel)
+        o = truth[qid]
+        naive_pairs.append((a_abs["naive"], o))
+        abs_pairs.append((a_abs["weighted"], o))
+        rel_pairs.append((a_rel["weighted"], o))
+        detail.append({"question_id": qid, "outcome": o,
+                       "naive": a_abs["naive"],
+                       "absolute": a_abs["weighted"],
+                       "relative": a_rel["weighted"]})
+    return {
+        "naive_brier": _brier(naive_pairs),
+        "absolute_brier": _brier(abs_pairs),
+        "relative_brier": _brier(rel_pairs),
+        "n": len(naive_pairs),
+        "detail": detail,
+        "absolute_degenerate": (sum(w_abs.values()) <= 0),
+    }
 
 
 def aggregate(conn, qtype, qid, weights=None):
@@ -149,9 +207,8 @@ def crowd_briers(conn, qtype, qids, weights):
 
 
 def holdout(conn, train_ids=(1, 2, 3, 4, 5), test_ids=(6, 7, 8, 9, 10)):
-    """Stage 4 fallback. Train weights on `train_ids` charts, score naive vs weighted on `test_ids`."""
-    weights = weights_map(conn, ids=set(train_ids))
-    res = crowd_briers(conn, "chart", list(test_ids), weights)
+    """Stage 4 fallback. Train weights on `train_ids` charts, score all three schemes on `test_ids`."""
+    res = results_multi(conn, "chart", list(test_ids), ids_for_weights=set(train_ids))
     res["train_ids"] = list(train_ids)
     res["test_ids"] = list(test_ids)
     return res
