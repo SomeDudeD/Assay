@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assay — Results</title>
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,system-ui,sans-serif; background:#0e1116;
+         color:#e6edf3; padding:24px 16px 60px; max-width:760px; margin:0 auto; }
+  h1 { font-size:26px; margin:0 0 4px; }
+  .sub { color:#8b949e; font-size:14px; margin-bottom:28px; }
+  h2 { font-size:16px; text-transform:uppercase; letter-spacing:.06em; color:#8b949e;
+       margin:32px 0 14px; }
+  .duel { display:flex; gap:16px; }
+  .side { flex:1; background:#161b22; border:1px solid #21262d; border-radius:16px;
+          padding:24px 16px; text-align:center; transition:.2s; }
+  .side.win { border-color:#238636; background:#12271a; box-shadow:0 0 0 2px #23863644; }
+  .side .lbl { font-size:13px; color:#8b949e; text-transform:uppercase; letter-spacing:.05em; }
+  .side .num { font-size:52px; font-weight:800; margin:10px 0 4px; line-height:1; }
+  .side .tag { font-size:12px; color:#8b949e; }
+  .side.win .tag { color:#3fb950; font-weight:700; }
+  .lift { text-align:center; margin:18px 0 0; font-size:15px; color:#8b949e; }
+  .lift b { color:#3fb950; }
+  .pending { background:#161b22; border:1px dashed #30363d; border-radius:14px;
+             padding:22px; text-align:center; color:#8b949e; }
+  table { width:100%; border-collapse:collapse; margin-top:10px; font-size:14px; }
+  th,td { padding:8px 10px; text-align:right; border-bottom:1px solid #21262d; }
+  th:first-child, td:first-child { text-align:left; }
+  th { color:#8b949e; font-weight:600; }
+  a { color:#2f81f7; }
+  .foot { margin-top:36px; font-size:13px; }
+</style>
+</head>
+<body>
+  <h1>Assay — Crowd Results</h1>
+  <div class="sub">Naive crowd vs. calibration-weighted crowd. Lower Brier is better.</div>
+  <div id="content">Loading…</div>
+  <div class="foot"><a href="/leaderboard">→ Leaderboard</a> &nbsp;·&nbsp; <a href="/">→ Capture app</a></div>
+
+<script>
+function fmt(x){ return x==null ? '—' : x.toFixed(4); }
+
+function duel(title, block, note){
+  if(!block || block.n===0){
+    return `<h2>${title}</h2><div class="pending">Not resolved yet — ${note}</div>`;
+  }
+  const nb=block.naive_brier, wb=block.weighted_brier;
+  const wWin = wb < nb, nWin = nb < wb;
+  const lift = (nb && wb!=null) ? ((nb-wb)/nb*100) : null;
+  let liftLine = '';
+  if(lift!=null){
+    liftLine = lift>=0
+      ? `Weighting cut crowd error by <b>${lift.toFixed(1)}%</b>`
+      : `Weighting was worse by ${(-lift).toFixed(1)}%`;
+  }
+  return `<h2>${title} <span style="color:#8b949e;font-weight:400">· ${block.n} questions</span></h2>
+    <div class="duel">
+      <div class="side ${nWin?'win':''}">
+        <div class="lbl">Naive crowd</div>
+        <div class="num">${fmt(nb)}</div>
+        <div class="tag">${nWin?'WINNER':'mean of all forecasts'}</div>
+      </div>
+      <div class="side ${wWin?'win':''}">
+        <div class="lbl">Weighted crowd</div>
+        <div class="num">${fmt(wb)}</div>
+        <div class="tag">${wWin?'WINNER':'calibration-weighted'}</div>
+      </div>
+    </div>
+    <div class="lift">${liftLine}</div>`;
+}
+
+function detailTable(block){
+  if(!block || !block.detail || !block.detail.length) return '';
+  let rows = block.detail.map(d=>`<tr><td>Q${d.question_id}</td><td>${d.outcome}</td>
+     <td>${d.naive.toFixed(3)}</td><td>${d.weighted.toFixed(3)}</td></tr>`).join('');
+  return `<table><tr><th>Question</th><th>Outcome</th><th>Naive</th><th>Weighted</th></tr>${rows}</table>`;
+}
+
+async function load(){
+  const d = await (await fetch('/results_data')).json();
+  let html = duel('Live questions', d.live, 'run the resolver at 5:00pm PT (resolve_live.py)');
+  html += detailTable(d.live);
+  html += duel('Holdout mode (fallback)', d.holdout,
+               'needs forecasts — train on charts 1-5, score on 6-10');
+  html += detailTable(d.holdout);
+  html += `<div class="foot" style="color:#8b949e">${d.n_forecasters} forecaster(s) in pool.</div>`;
+  document.getElementById('content').innerHTML = html;
+}
+load();
+</script>
+</body>
+</html>

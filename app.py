@@ -8,6 +8,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
+import scoring
+
 DB = "assay.db"
 CHART_PROMPT = "What is the probability this asset is higher 24 hours later?"
 
@@ -117,3 +119,65 @@ async def forecast(request: Request):
     conn.commit()
     conn.close()
     return {"ok": True, "handle": handle, "written": written}
+
+
+# ---------- Stage 3: reputation ----------
+@app.get("/reputation/{handle}")
+def reputation(handle: str):
+    conn = db()
+    try:
+        return scoring.reputation(conn, handle)
+    finally:
+        conn.close()
+
+
+# ---------- Stage 4: aggregation ----------
+@app.get("/aggregate/{question_id}")
+def aggregate(question_id: int, type: str = "live"):
+    conn = db()
+    try:
+        return scoring.aggregate(conn, type, question_id)
+    finally:
+        conn.close()
+
+
+@app.get("/results_data")
+def results_data():
+    """naive vs weighted crowd brier for resolved live questions + holdout fallback."""
+    conn = db()
+    try:
+        weights = scoring.weights_map(conn)
+        live = scoring.crowd_briers(conn, "live", list(range(1, 11)), weights)
+        hold = scoring.holdout(conn)
+        return {"live": live, "holdout": hold,
+                "n_forecasters": len(scoring.all_handles(conn))}
+    finally:
+        conn.close()
+
+
+# ---------- Stage 5: leaderboard ----------
+@app.get("/leaderboard_data")
+def leaderboard_data():
+    conn = db()
+    try:
+        rows = []
+        for h in scoring.all_handles(conn):
+            rep = scoring.reputation(conn, h)
+            if rep["n"] == 0:
+                continue
+            rows.append({"handle": h, "brier": rep["brier"],
+                         "skill": rep["skill"], "weight": rep["weight"], "n": rep["n"]})
+        rows.sort(key=lambda r: r["brier"])  # lower brier = better
+        return {"leaderboard": rows}
+    finally:
+        conn.close()
+
+
+@app.get("/results")
+def results_page():
+    return FileResponse("static/results.html")
+
+
+@app.get("/leaderboard")
+def leaderboard_page():
+    return FileResponse("static/leaderboard.html")

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assay — Leaderboard</title>
+<style>
+  body { margin:0; font-family:-apple-system,system-ui,sans-serif; background:#0e1116;
+         color:#e6edf3; padding:24px 16px 60px; max-width:680px; margin:0 auto; }
+  h1 { font-size:26px; margin:0 0 4px; }
+  .sub { color:#8b949e; font-size:14px; margin-bottom:24px; }
+  table { width:100%; border-collapse:collapse; font-size:15px; }
+  th,td { padding:11px 10px; text-align:right; border-bottom:1px solid #21262d; }
+  th:nth-child(2), td:nth-child(2) { text-align:left; }
+  th { color:#8b949e; font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:.04em; }
+  td.rank { color:#8b949e; }
+  tr.top td { color:#3fb950; font-weight:700; }
+  .wbar { display:inline-block; height:8px; background:#238636; border-radius:4px; vertical-align:middle; }
+  a { color:#2f81f7; }
+  .foot { margin-top:30px; font-size:13px; }
+</style>
+</head>
+<body>
+  <h1>Leaderboard</h1>
+  <div class="sub">Ranked by Brier score on the 10 chart questions (lower is better).</div>
+  <div id="content">Loading…</div>
+  <div class="foot"><a href="/results">→ Crowd results</a> &nbsp;·&nbsp; <a href="/">→ Capture app</a></div>
+<script>
+async function load(){
+  const d = await (await fetch('/leaderboard_data')).json();
+  const rows = d.leaderboard || [];
+  if(!rows.length){ document.getElementById('content').innerHTML =
+      '<p style="color:#8b949e">No forecasts yet.</p>'; return; }
+  let html = `<table><tr><th>#</th><th>Handle</th><th>Brier</th><th>Skill</th><th>Weight</th><th>n</th></tr>`;
+  rows.forEach((r,i)=>{
+    html += `<tr class="${i===0?'top':''}">
+      <td class="rank">${i+1}</td>
+      <td>${r.handle}</td>
+      <td>${r.brier.toFixed(4)}</td>
+      <td>${r.skill.toFixed(3)}</td>
+      <td><span class="wbar" style="width:${Math.round(r.weight*60)}px"></span> ${r.weight.toFixed(3)}</td>
+      <td>${r.n}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('content').innerHTML = html;
+}
+load();
+</script>
+</body>
+</html>
