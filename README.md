@@ -78,9 +78,15 @@ The fix is relative weighting: a softmax over Brier scores, ranking forecasters 
 | Absolute-weighted | 0.3634 |
 | Relative-weighted | 0.2974 |
 
-Weighting **did not help** here. We report it anyway.
+Weighting **did not help** here. It made the answer worse.
 
-At N=9 with 10 scoring questions each, the calibration signal is thin. A scheme that wins on one question set and loses on another is what an honest result looks like at this sample size. We report the aggregate comparison and make no claims about individuals.
+**So we tested the same idea twice and got opposite answers.** On the live questions, weighting the crowd helped (0.2708 → 0.2505). On a held-out set of chart questions it hurt (0.2701 → 0.2974). Same nine people, same weighting, different result.
+
+*(Holdout = we learned the weights from 5 chart questions, then tested them on the other 5 the system had never seen. A fairness check: study half the flashcards, get quizzed on the other half.)*
+
+**What that means, plainly: we do not have enough data to know whether this works.**
+
+With 9 people answering 10 questions each, the numbers are noisy. A real effect would win both tests. A dead idea would lose both. Winning one and losing one is what *noise* looks like. We report both numbers rather than only the one that flatters us.
 
 ---
 
@@ -237,7 +243,7 @@ Prototype. Stated plainly:
 
 - **N=9, ten scoring questions each.** Individual Brier scores are noisy and should be read as directional, not definitive. The aggregate comparison is the result we report.
 - **Absolute weighting is degenerate** on a crowd where nobody beats the baseline. That is a real design flaw, discovered by running on real humans.
-- **Relative weighting beat naive on the live questions and lost on the holdout.** Mixed, and reported as such.
+- **The weighting won one test and lost the other.** Helped on the live questions, hurt on the holdout. That is not a result — that is not enough data. More questions and more forecasters is the fix.
 - **Ground truth on the chart set is 3 up / 7 down**, so a reflexively bearish forecaster is rewarded by the imbalance alone. A larger, balanced question set is the first thing to fix.
 - **The crowd's first submissions were lost** to a `DELETE` in a test script mid-build. The data reported here is from a re-collected crowd.
 
