@@ -6,7 +6,7 @@
 
 Prediction markets aggregate belief by *money weight* — whoever bets most moves the price most. But capital is not judgment. Two forecasters with identical insight and different bankrolls move the price by different amounts, and the market treats the richer one as the more credible one.
 
-Assay weights the crowd by **demonstrated calibration** instead: how often has this person been right, at the confidence they claimed?
+Sextant weights the crowd by **demonstrated calibration** instead: how often has this person been right, at the confidence they claimed?
 
 The result is a better forecast from the same crowd, using the same information, with no additional capital at risk.
 
@@ -16,43 +16,7 @@ The result is a better forecast from the same crowd, using the same information,
 
 > Given N forecasters answering the same question, a calibration-weighted aggregate produces a lower Brier score than a naive (equal-weight) average.
 
-We test this live. We show all schemes side by side. If the weighted number isn't better, the project failed and the README says so.
-
----
-
-## Results — 9 human forecasters, 180 forecasts, July 11 2026
-
-### Live crypto questions (polled 3pm, resolved 5:00pm PT)
-
-| Scheme | Brier | |
-|---|---|---|
-| Naive crowd (equal weight) | **0.2708** | |
-| Absolute-weighted, `w = max(0, skill)` | **0.2708** | degenerate — collapses to naive |
-| **Relative-weighted (softmax, T=0.05)** | **0.2505** | **7.5% less crowd error** |
-
-**Calibration weighting cut crowd error by 7.5% on questions nobody knew the answer to.**
-
-### The finding we did not expect
-
-**Not one of our nine forecasters beat a coin flip on the chart questions.**
-
-The four best all scored *exactly* 0.2500 — they answered 50% and meant it. Everyone who expressed real confidence scored **worse than chance**.
-
-This broke our first weighting scheme. `w = max(0, skill)` measures skill against an absolute 0.5 baseline; when nobody clears that bar, every weight goes to zero and the weighted aggregate silently collapses into the naive mean. That is a genuine design flaw, and we only found it by running the system on real humans instead of synthetic ones.
-
-The fix is relative weighting: softmax over Brier scores, ranking forecasters against *each other* rather than against a fixed floor. It stays well-defined regardless of absolute skill, and it pulls the crowd toward its most honest members — which, on this crowd, meant pulling it toward the people who admitted they didn't know.
-
-### Holdout (weights trained on charts 1–5, tested on 6–10)
-
-| Scheme | Brier |
-|---|---|
-| **Naive crowd** | **0.2701** |
-| Absolute-weighted | 0.3634 |
-| Relative-weighted | 0.2974 |
-
-Weighting **did not help** here. We report it anyway.
-
-At N=9 with 10 scoring questions each, the calibration signal is thin, and a scheme that wins on one question set and loses on another is exactly what a real result looks like at this sample size. We are reporting the aggregate comparison, not making claims about individuals.
+We test this live. We show both numbers side by side. If the weighted number isn't better, the project failed and the demo says so.
 
 ---
 
