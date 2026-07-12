@@ -105,10 +105,14 @@
 
 <div class="slide active">
   <div class="eyebrow">01 · The problem</div>
-  <h1>Prediction markets weight<br>belief by money.</h1>
-  <p class="lead" style="margin-bottom:1.4rem;">Money is not judgment.</p>
-  <p>Whoever bets most moves the price most. Two forecasters with identical insight and different bankrolls move the market by different amounts.</p>
-  <p><strong>The market treats the richer one as the more credible one.</strong></p>
+  <h1>Nobody keeps score<br>of judgment.</h1>
+  <p class="lead" style="margin-bottom:1.2rem;">Reality does — eventually. But its scorecard arrives <strong>late</strong>, and it's <strong>contaminated</strong>.</p>
+  <p><strong>Late:</strong> the trader learns he was overconfident after he loses the money. The doctor learns after the misdiagnoses. You pay tuition for the lesson.</p>
+  <p><strong>Contaminated:</strong> a winning P&amp;L mixes skill, luck, position size, and a bull market. Three of those aren't judgment.</p>
+  <div class="callout" style="margin-top:1.2rem;">
+    <span class="tag">And prediction markets are no better</span>
+    <div class="body">They weight belief by <strong>money</strong>. Whoever bets most moves the price most — so the market treats the richer forecaster as the more credible one.</div>
+  </div>
 </div>
 
 <div class="slide">
@@ -116,7 +120,7 @@
   <div class="split">
     <div class="l">
       <h1 style="margin-bottom:1rem;">Assay</h1>
-      <p class="voice" style="margin-bottom:1.4rem;">Weight the crowd by demonstrated calibration — not how much you bet, but how often you've been right at the confidence you claimed.</p>
+      <p class="voice" style="margin-bottom:1.4rem;">A clean scorecard for judgment. Not how much you bet — <strong>when you say 70%, are you right 70% of the time?</strong></p>
       <div class="hairline"></div>
       <h2>The hard part is cold-start.</h2>
       <p>Calibration needs a track record. Track records take months. So nobody builds this — and markets fall back on money, because it's the only weight available.</p>
@@ -169,16 +173,19 @@
 </div>
 
 <div class="slide">
-  <div class="eyebrow">04 · Why this is infrastructure</div>
-  <div class="endpoint">
+  <div class="eyebrow">04 · What this is</div>
+  <h2 style="margin-bottom:0.9rem;">Not a model. Not a market.<br>A measurement layer.</h2>
+  <p style="margin-bottom:0.5rem;"><strong>It predicts nothing.</strong> It has no opinion about where any price goes.<br>
+  <strong>It takes no bets.</strong> No odds, no counterparty, no money.<br>
+  <strong>It scores the people who do both</strong> — and hands back a number.</p>
+  <div class="endpoint" style="margin:1rem 0;">
     <span class="m">GET</span> /reputation/{handle} → { <span class="k">brier</span>, <span class="k">skill</span>, <span class="k">weight</span>, <span class="k">calibration_curve</span> }
   </div>
-  <p class="lead" style="margin-bottom:1.2rem;">A portable calibration score <strong>any</strong> prediction market can consume to weight its own crowd.</p>
-  <p>No AMM. No order book. No wallet. No token. Those are the entertainment layer — <strong>this is the layer underneath.</strong></p>
+  <p class="lead" style="margin-bottom:1rem;">One endpoint. <strong>Any</strong> market — or any team — can call it to decide how much to trust someone.</p>
   <div class="hairline"></div>
-  <h2 style="font-size:1.25rem;margin-bottom:0.7rem;">Domain-agnostic by construction</h2>
-  <div class="domains"><span>Public health</span><span>Climate</span><span>Logistics</span><span>Policy</span></div>
-  <p>Same problem everywhere: many people have opinions, they are not equally good, and <strong>nobody is tracking who is.</strong> Finance is just the fastest substrate to prove the mechanism — ground truth arrives in hours, not years.</p>
+  <h2 style="font-size:1.2rem;margin-bottom:0.6rem;">The same problem is everywhere</h2>
+  <div class="domains"><span>Trading desks</span><span>Public health</span><span>Climate</span><span>Logistics</span><span>Policy</span></div>
+  <p>Many people have opinions, they are not equally good, and <strong>nobody is tracking who is.</strong> Markets are just the fastest place to prove it — ground truth arrives in hours, not years.</p>
 </div>
 
 <div class="slide">
